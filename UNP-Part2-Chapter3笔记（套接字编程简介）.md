@@ -1,7 +1,7 @@
 # UNP-Part2-Chapter3笔记（套接字编程简介）
 - - -
 IPv4套接字地址结构
-```
+```cpp
 struct in_addr {
   in_addr_t         s_addr;        /* 32位 IPv4 地址, 网络字节序(大端) */
 }
