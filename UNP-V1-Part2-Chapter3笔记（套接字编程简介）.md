@@ -4,12 +4,12 @@
 ## 1 概述
 地址转换函数 ( 地址的文本表达 <==> 存放在地址结构中的二进制值 )
 >只适用于 `IPv4`
->>inet_addr
->>inet_ntoa
+>> - inet_addr
+>> - inet_ntoa
 >
 >同时适用于 `IPv4` 和 `IPv6`
->>inet_pton
->>inet_ntop
+>> - inet_pton
+>> - inet_ntop
 
 ## 2 套接字地址结构
 大多数 `socket函数`都需要一个指向 `socket地址结构`的指针作为参数。每个协议族都定义自己的 `socket地址结构`。这些结构名字均以 `sockaddr_`开头，并以对应每个协议族的唯一后缀结尾。
@@ -67,7 +67,7 @@ struct sockaddr {
 };
 ```
 于是套接字函数被定义为以指向某个通用套接字地址结构的一个指针作为其参数之一，例如 bind函数的 ANSI C函数原型：
-` int bind(int, struct sockaddr *, socklen_t); `
+``` int bind(int, struct sockaddr *, socklen_t); ```
 所以在调用这些函数时必须要将套接字地址结构指针强制转换，变成指向通用套接字地址结构的指针，例如：
 ```cpp
 struct sockaddr_in serv;       /* IPv4 socket address structure */
@@ -104,7 +104,25 @@ struct sockaddr_in6 {
 	- 高序12位保留。
 - 对于具备范围的地址(scoped address)，`sin_scope_id`字段标识其范围(scope)，最常见的是链路局部地址(link-local address)的接口索引(interface index)(见A.5节)。
 
+### 2.4 新的通用套接字地址接口
+作为 IPv6套接字API的一部分而定义的新的通用套接字地址结构克服了现有`struct sockaddr`的一些缺点。不像`struct sockaddr`，新的`struct sockaddr_storage`足以容纳系统所支持的任何套接字地址结构。`sockaddr_storage`结构在`<netinet.h>`头文件中定义，如下图：
+```cpp
+struct sockaddr_storage {
+  uint8_t        ss_len;         /* 该结构体长度（独立实现） */
+  sa_family_t    ss_family;      /* address family: AF_xxx value */
+  /* other content (transparent to user) */
+}
+```
+`sockaddr_storage`类型提供的通用套接字地址结构相比`sockaddr`存在以下两点差别：
+1. 如果系统支持的任何套接字地址结构有对齐需要，那么`sockaddr_storage`能够满足最苛刻的对齐要求。
+2. `sockaddr_storage`足够大，能够容纳系统支持的任何套接字地址结构。
+注意，除了`ss_family`和`ss_len`外（如果有的话），`sockaddr_storage`结构中其他字段对用户来说是透明的。`sockaddr_storage`结构必须类型强制转换成或复制到适合于`ss_family`字段所给出的地址类型的套接字地址结构中，才能访问其他字段。
 
+### 2.5 套接字地址结构的比较
+在图3-6中，我们对5种套接字地址结构进行了比较：`IPv4`、`IPv6`、`Unix域`、`数据链路`和`存储`。我们假设所有套接字地址结构都包含一个单字节的长度字段，地址族字段也占用一个字节，其他字段都占用确切的最短长度。
+> `IPv4`和`IPv6`套接字地址结构是固定长度的，而`Unix域`和`数据链路`结构是可变长度的。为了处理长度可变的结构，当我们把指向某个套接字地址结构的指针作为一个参数传递给某个套接字函数时，也把该结构的长度作为另一个参数传递给这个函数。我们在每种长度固定的结构下方给出了这种结构的字节数长度（就4.4BSD实现而言）。
 
+![Diff SockAddr Structure](./UNP-V1-IMG-3-6.png)
 
+## 3 值-结果参数
 
