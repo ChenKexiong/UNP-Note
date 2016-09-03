@@ -138,6 +138,7 @@ struct sockaddr_in  serv;
 connect(sockfd, (SA *)&serv, sizeof(serv));
 ```
 既然指针和指针所指内容的大小都传递给了内核，于是内核知道到底需从进程复制多少数据进来，下图（图3-7）展示了这个情形。
+
 ![sockaddr user to kernel](./UNP-V1-IMG-3-7.png)
 
 套接字地址结构大小的数据类型实际是`socklen_t`，而不是 int，不过 POSIX规范建议将`socklen_t`定义为`uint32_t`。
@@ -152,6 +153,7 @@ getpeername(unixfd, (SA *)&cli, &len);
 /* len may have changed */
 ```
 把套接字地址结构大小这个参数从一个整数改为指向某个整数变量的指针，其原因在于：当函数被调用时，结构大小是一个值（value），它告诉内核该结构的大小，这样内核在写该结构时不至于越界；当函数返回时，结构大小又是一个结果（result），它告诉进程内核在该结构中究竟存储了多少信息。这种类型的参数称为`值-结果（value-result）参数`。图3-8展示了这个情形。
+
 ![sockaddr kernel to user](./UNP-V1-IMG-3-8.png)
 
 传递套接字地址结构的函数还有两个：`recvmsg`和`sendmsg`。它们的套接字地址结构长度不是作为函数参数而是作为结构字段传递的。
