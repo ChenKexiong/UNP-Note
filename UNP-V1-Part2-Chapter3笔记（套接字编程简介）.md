@@ -67,7 +67,9 @@ struct sockaddr {
 };
 ```
 于是套接字函数被定义为以指向某个通用套接字地址结构的一个指针作为其参数之一，例如 bind函数的 ANSI C函数原型：
-``` int bind(int, struct sockaddr *, socklen_t); ```
+```cpp
+int bind(int, struct sockaddr *, socklen_t);
+```
 所以在调用这些函数时必须要将套接字地址结构指针强制转换，变成指向通用套接字地址结构的指针，例如：
 ```cpp
 struct sockaddr_in serv;       /* IPv4 socket address structure */
