@@ -33,6 +33,7 @@ struct sockaddr_in {
 - 除非涉及路由套接字（Chapter 8），否则即使有长度字段`sin_len`也无需设置和检查。
 - POSIX规范只需要地址结构中的3个字段： `sin_family`、`sin_addr`、`sin_port`，因此所有套接字地址结构大小至少为 16字节。定义额外的字段对符合 POSIX的实现来说也很正常（几乎所有实现都有`sin_zero`字段）。
 - 对于字段 `s_addr`、`sin_family`、`sin_port`的 POSIX数据类型。`in_addr_t类型`必须至少为 `uint32_t`，`in_port_t类型`必须至少是 `uint16_t`，而`sa_family`则一般视是否有长度字段决定，若存在`sin_len`字段则为`uint8_t`，否则为`uint16_t`。下表为部分 POSIX定义的数据类型。
+
 | 数据类型   | 说明   | 头文件 |
 |----------|--------|-------|
 | int8_t   | 带符号8位整数  | < sys/types.h> |
@@ -127,9 +128,10 @@ struct sockaddr_storage {
 
 ## 3 值-结果参数
 当往一个套接字函数传递一个套接字地址结构时，该结构总是以引用形式传递，即传递的是指向该结构的一个指针。该结构的长度也作为一个参数来传递，不过传递方式取决于传递方向：
-- 从进程到内核
-- 从内核到进程
-1. 从进程到内核传递套接字地址结构的函数有3个：`bind`、`connect`和`sendto`。这些函数的一个参数值指向某个套接字地址结构的指针，另一个参数是该结构的整数大小，例如：
+> `从进程到内核` 和 `从内核到进程`
+
+- 从进程到内核：
+从进程到内核传递套接字地址结构的函数有3个：`bind`、`connect`和`sendto`。这些函数的一个参数值指向某个套接字地址结构的指针，另一个参数是该结构的整数大小，例如：
 ```cpp
 struct sockaddr_in  serv;
 /* fill in serv{} */
@@ -137,9 +139,11 @@ connect(sockfd, (SA *)&serv, sizeof(serv));
 ```
 既然指针和指针所指内容的大小都传递给了内核，于是内核知道到底需从进程复制多少数据进来，下图（图3-7）展示了这个情形。
 ![sockaddr user to kernel](./UNP-V1-IMG-3-7.png)
+
 套接字地址结构大小的数据类型实际是`socklen_t`，而不是 int，不过 POSIX规范建议将`socklen_t`定义为`uint32_t`。
 
-2. 从内核到进程传递套接字地址结构的函数有4个：`accept`、`recvfrom`、`getsockname`和`getpeername`。这4个函数的其中两个参数是指向某个套接字地址结构的指针和指向表示该结构大小的整数变量的指针。例如：
+- 从内核到进程：
+从内核到进程传递套接字地址结构的函数有4个：`accept`、`recvfrom`、`getsockname`和`getpeername`。这4个函数的其中两个参数是指向某个套接字地址结构的指针和指向表示该结构大小的整数变量的指针。例如：
 ```cpp
 struct sockaddr_un  cli;     /* Unix domain */
 socklen_t len;
@@ -149,6 +153,7 @@ getpeername(unixfd, (SA *)&cli, &len);
 ```
 把套接字地址结构大小这个参数从一个整数改为指向某个整数变量的指针，其原因在于：当函数被调用时，结构大小是一个值（value），它告诉内核该结构的大小，这样内核在写该结构时不至于越界；当函数返回时，结构大小又是一个结果（result），它告诉进程内核在该结构中究竟存储了多少信息。这种类型的参数称为`值-结果（value-result）参数`。图3-8展示了这个情形。
 ![sockaddr kernel to user](./UNP-V1-IMG-3-8.png)
+
 传递套接字地址结构的函数还有两个：`recvmsg`和`sendmsg`。它们的套接字地址结构长度不是作为函数参数而是作为结构字段传递的。
 
 > 当使用`value-result参数`作为套接字地址结构的长度时，如果套接字地址结构是固定长度的，那么从内核返回的值总是那个固定长度，例如`IPv4`（sockaddr_in长度是16）和`IPv6`（sockaddr_in6长度是28）。然而对于可变长度的套接字地址结构（例如 Unix域的 `sockaddr_un`），返回值可能小于该结构的最大长度。
@@ -182,14 +187,14 @@ uint32_t ntohl(uint32_t net32bitvalue);
 
 ## 5 字节操纵函数
 有两组操纵多字节字段的函数。名字以 b（表示字节）开头的第一组函数起源于4.2BSD，几乎所有现今支持套接字函数的系统仍然提供它们。名字以 mem（表示内存）开头的第二组函数起源于 ANSI C标准，支持 ANSI C函数库的所有系统都提供它们。
-1. 源自 Berkeley的函数
+- 源自 Berkeley的函数
 ```cpp
 #include <strings.h>
 void bzero(void *dest, size_t nbytes);
 void bcopy(const void *src, void *dest, size_t nbytes);
 int bcmp(const void *ptr1, const void *ptr2, size_t nbytes); /* 若相等返回 0 */
 ```
-2. ANSI C函数
+- ANSI C函数
 ```cpp
 #include <string.h>
 void *memset(void *dest, int c, size_t len);
