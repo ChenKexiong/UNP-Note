@@ -33,8 +33,7 @@ struct sockaddr_in {
 - 除非涉及路由套接字（Chapter 8），否则即使有长度字段`sin_len`也无需设置和检查。
 - POSIX规范只需要地址结构中的3个字段： `sin_family`、`sin_addr`、`sin_port`，因此所有套接字地址结构大小至少为 16字节。定义额外的字段对符合 POSIX的实现来说也很正常（几乎所有实现都有`sin_zero`字段）。
 - 对于字段 `s_addr`、`sin_family`、`sin_port`的 POSIX数据类型。`in_addr_t类型`必须至少为 `uint32_t`，`in_port_t类型`必须至少是 `uint16_t`，而`sa_family`则一般视是否有长度字段决定，若存在`sin_len`字段则为`uint8_t`，否则为`uint16_t`。下表为部分 POSIX定义的数据类型。
-
-| 数据类型   | 说明   | 头文件 |
+>| 数据类型   | 说明   | 头文件 |
 |----------|--------|-------|
 | int8_t   | 带符号8位整数  | < sys/types.h> |
 | uint8_t  | 无符号8位整数  | < sys/types.h> |
@@ -204,4 +203,20 @@ void *memcpy(void *dest, const void *src, size_t nbytes);
 int memcmp(const void *ptr1, const void *ptr2, size_t nbytes);
 ```
 
+## 6 inet_aton、inet_addr 和 inet_ntoa函数
+> `inet_aton`、`inet_addr`和`inet_ntoa` 在点分十进制数串与长度为32位的网络字节序二进制值间转换 IPv4地址。
+> 两个较新的函数`inet_pton`和`inet_ntop`对于 IPv4和 IPv6地址都适用。下一节介绍这两个函数。
 
+```cpp
+#include <arpa/inet.h>
+/* 若字符串有效则为 1，否则为 0 */
+int inet_aton(const char *strptr, struct in_addr *addrptr);
+/* 若字符串有效则返回32位二进制网络字节序的 IPv4地址，否则返回 INADDR_NONE */
+in_addr_t inet_addr(const char *strptr);   /* 已被废弃，请使用 inet_aton */
+/* 返回一个点分十进制数串的指针 */
+char *inet_ntoa(struct in_addr inaddr);
+```
+注意：`inet_addr`和`inet_aton`进行相同的转换，但该函数存在一个问题：所有 2^32^个可能的二进制值都是有效的 IP地址（从 0.0.0.0到 255.255.255.255），但是当出错时该函数返回 INADDR_NONE常值（通常是一个32位均为1的值）。这意味着点分十进制数串 255.255.255.255（IPv4的有限广播地址）不能由该函数处理，因为它的二进制值被用来指示该函数失败。
+> `inet_ntoa`函数将一个32位的网络字节序二进制 IPv4地址转换成相应的点分十进制数串。由该函数的返回值所指向的字符串驻留在静态内存中。这意味着该函数是不可重入的，另外需要留意，该函数以一个结构而不是指向该结构的一个指针作为其参数（常见的是以指向结构的指针作为参数）。
+
+## 7 inet_pton 和 inet_ntop 函数
