@@ -123,7 +123,7 @@ struct sockaddr_storage {
 在图3-6中，我们对5种套接字地址结构进行了比较：`IPv4`、`IPv6`、`Unix域`、`数据链路`和`存储`。我们假设所有套接字地址结构都包含一个单字节的长度字段，地址族字段也占用一个字节，其他字段都占用确切的最短长度。
 > `IPv4`和`IPv6`套接字地址结构是固定长度的，而`Unix域`和`数据链路`结构是可变长度的。为了处理长度可变的结构，当我们把指向某个套接字地址结构的指针作为一个参数传递给某个套接字函数时，也把该结构的长度作为另一个参数传递给这个函数。我们在每种长度固定的结构下方给出了这种结构的字节数长度（就4.4BSD实现而言）。
 
-![Diff SockAddr Structure](./UNP-V1-IMG-3-6.png)
+![Diff SockAddr Structure](./image/UNP-V1-IMG-3-6.png)
 
 ## 3 值-结果参数
 当往一个套接字函数传递一个套接字地址结构时，该结构总是以引用形式传递，即传递的是指向该结构的一个指针。该结构的长度也作为一个参数来传递，不过传递方式取决于传递方向：
@@ -138,7 +138,7 @@ connect(sockfd, (SA *)&serv, sizeof(serv));
 ```
 既然指针和指针所指内容的大小都传递给了内核，于是内核知道到底需从进程复制多少数据进来，下图（图3-7）展示了这个情形。
 
-![sockaddr user to kernel](./UNP-V1-IMG-3-7.png)
+![sockaddr user to kernel](./image/UNP-V1-IMG-3-7.png)
 
 套接字地址结构大小的数据类型实际是`socklen_t`，而不是 int，不过 POSIX规范建议将`socklen_t`定义为`uint32_t`。
 
@@ -153,7 +153,7 @@ getpeername(unixfd, (SA *)&cli, &len);
 ```
 把套接字地址结构大小这个参数从一个整数改为指向某个整数变量的指针，其原因在于：当函数被调用时，结构大小是一个值（value），它告诉内核该结构的大小，这样内核在写该结构时不至于越界；当函数返回时，结构大小又是一个结果（result），它告诉进程内核在该结构中究竟存储了多少信息。这种类型的参数称为`值-结果（value-result）参数`。图3-8展示了这个情形。
 
-![sockaddr kernel to user](./UNP-V1-IMG-3-8.png)
+![sockaddr kernel to user](./image/UNP-V1-IMG-3-8.png)
 
 传递套接字地址结构的函数还有两个：`recvmsg`和`sendmsg`。它们的套接字地址结构长度不是作为函数参数而是作为结构字段传递的。
 
@@ -184,7 +184,7 @@ uint16_t ntohs(uint16_t net16bitvalue);
 uint32_t ntohl(uint32_t net32bitvalue);
 ```
 位序问题：最左边的位是最早出现的最高有效位，即分配给最高有效位的编号为0，如下：
-![bit order](./UNP-V1-IMG-3-8-2.png)
+![bit order](./image/UNP-V1-IMG-3-8-2.png)
 
 ## 5 字节操纵函数
 有两组操纵多字节字段的函数。名字以 b（表示字节）开头的第一组函数起源于4.2BSD，几乎所有现今支持套接字函数的系统仍然提供它们。名字以 mem（表示内存）开头的第二组函数起源于 ANSI C标准，支持 ANSI C函数库的所有系统都提供它们。
@@ -220,3 +220,15 @@ char *inet_ntoa(struct in_addr inaddr);
 > `inet_ntoa`函数将一个32位的网络字节序二进制 IPv4地址转换成相应的点分十进制数串。由该函数的返回值所指向的字符串驻留在静态内存中。这意味着该函数是不可重入的，另外需要留意，该函数以一个结构而不是指向该结构的一个指针作为其参数（常见的是以指向结构的指针作为参数）。
 
 ## 7 inet_pton 和 inet_ntop 函数
+这两个函数是随 IPv6出现的新函数，对于 IPv4地址和 IPv6地址都适用。函数名中 p和 n分别代表`表达（presentation）`和`数值（numeric）`。函数声明如下：
+```cpp
+#include <arpa/inet.h>
+/* 若成功返回 1，若输入无效返回 0，出错则为 -1 */
+int inet_pton(int family, const char *strptr, void *addrptr);
+/* 若成功返回指向结果的指针，若出错则为 NULL */
+const char *inet_ntop(int family, const void *addrptr, char *strptr, size_t len);
+```
+> 这两个函数的 family参数既可以是 AF_INET，也可以是 AF_INET6。如果以不被支持的地址族作为 family参数，这两个函数就都返回一个错误，并将 errno置为 EAFNOSUPPORT。
+> 第一个函数尝试转换由 `strptr`指针所指的字符串，并通过 `addrptr`指针存放二进制结果。若成功则返回 1，否则如果对所指定的 family而言输入的字符串不是有效的表达格式，那么返回值为 0。
+>
+
