@@ -228,7 +228,37 @@ int inet_pton(int family, const char *strptr, void *addrptr);
 /* 若成功返回指向结果的指针，若出错则为 NULL */
 const char *inet_ntop(int family, const void *addrptr, char *strptr, size_t len);
 ```
-> 这两个函数的 family参数既可以是 AF_INET，也可以是 AF_INET6。如果以不被支持的地址族作为 family参数，这两个函数就都返回一个错误，并将 errno置为 EAFNOSUPPORT。
+>这两个函数的 family参数既可以是 AF_INET，也可以是 AF_INET6。如果以不被支持的地址族作为 family参数，这两个函数就都返回一个错误，并将 errno置为 EAFNOSUPPORT。
+>
 > 第一个函数尝试转换由 `strptr`指针所指的字符串，并通过 `addrptr`指针存放二进制结果。若成功则返回 1，否则如果对所指定的 family而言输入的字符串不是有效的表达格式，那么返回值为 0。
 >
+> `inet_ntop`进行相反的转换，从数值格式`addrptr`转换到表达格式`strptr`。len参数是目标存储单元的大小，以免该函数溢出其调用者的缓冲区。为有助于指定这个大小，在`<netinet/in.h>`头文件中有如下定义：
+> ```cpp
+> #define INET_ADDRSTRLEN      16     /* for IPv4 dotted-decimal */
+> #define INET6_ADDRSTRLEN     46     /* for IPv6 hex string */
+> ```
+> 如果 len太小，不足以容纳表达格式结果（包括结尾的空字符），那么返回一个空指针，并置 errno为 ENOSPC。
+>
+> `inet_ntop`函数的 strptr参数不可以是一个空指针。调用者必须为目标存储单元分配内存并指定其大小。调用成功时，这个指针就是该函数的返回值。
+
+## 8 sock_ntop 和相关函数
+> 这些是书里面定义的同时支持`IPv4`和`IPv6`的 API，下面仅给出函数声明：
+
+```cpp
+#include <unp.h>
+char *sock_ntop(const struct sockaddr *sockaddr, socklen_t addrlen);
+int sock_bind_wild(int sockfd, int family);
+int sock_cmp_addr(const struct sockaddr *sockaddr1,
+                  const struct sockaddr *sockaddr2, socklen_t addrlen);
+int sock_get_port(const struct sockaddr *sockaddr, socklen_t addrlen);
+char *sock_ntop_host(const struct sockaddr *sockaddr, socklen_t addrlen);
+void sock_set_addr(const struct sockaddr *sockaddr, socklen_t addrlen, void *ptr);
+void sock_set_port(const struct sockaddr *sockaddr, socklen_t addrlen, int port);
+void sock_set_wild(struct sockaddr *sockaddr, socklen_t addrlen);
+```
+
+## 9 readn、writen 和 readline 函数
+字节流套接字（例如 TCP套接字）上的`read`或`write`输入或输出的字节数可能比请求的数量少，然而这不是出错的状态
+
+
 
