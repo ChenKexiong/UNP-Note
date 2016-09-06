@@ -396,6 +396,8 @@ ssize_t readlinebuf(void **vptrptr)
   return (read_cnt);
 }
 ```
-> 2~21   内部函数`my_read`每次最多读`MAX_LINE`个字符，然后每次返回一个字符。
-> 29     `readline`函数本身的唯一变化是用`my_read`调用取代`read`。
-> 42~48  `readlinebuf`这个新函数能够展露内部缓冲区的状态，便于调用者查看在当前文本行之后是否收到了新数据。
+> [2~21 ]  内部函数`my_read`每次最多读`MAX_LINE`个字符，然后每次返回一个字符。
+> 
+> [29   ]  `readline`函数本身的唯一变化是用`my_read`调用取代`read`。
+> 
+> [42~48]  `readlinebuf`这个新函数能够展露内部缓冲区的状态，便于调用者查看在当前文本行之后是否收到了新数据。
