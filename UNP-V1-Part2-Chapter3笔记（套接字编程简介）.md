@@ -258,7 +258,15 @@ void sock_set_wild(struct sockaddr *sockaddr, socklen_t addrlen);
 ```
 
 ## 9 readn、writen 和 readline 函数
-字节流套接字（例如 TCP套接字）上的`read`或`write`输入或输出的字节数可能比请求的数量少，然而这不是出错的状态
+字节流套接字（例如 TCP套接字）上的`read`或`write`输入或输出的字节数可能比请求的数量少，然而这不是出错的状态。这个现象的原因在于内核中用于套接字的缓冲区可能已经到达极限。此时所需的是调用者再次调用`read`或`write`函数，以输入或输出剩余字节。有些版本的Unix在往一个管道中写多余4096字节的数据时也会表现出这样的行为。这个现象在 read一个字节流套接字时很常见，但是在 write一个字节流套接字时只会在该套接字为非阻塞的前提下才出现。尽管如此，为预防万一，不让实现返回一个不足的字节计数值，我们总是改为调用`written`函数来取代`write`函数。以下是我们读写字节流套接字时总要使用的函数。
+```cpp
+#include <unp.h>
+ssize_t readn(int filedes, void *buf, size_t nbytes);
+ssize_t written(int filedes, const void *buff, size_t nbytes);
+ssize_t readline(int filedes, void *buff, size_t maxlen);
+/* 均返回：读或写的字节数，若出错则为 1 */
+```
+下面给出3个函数的实现：
 
 
 
